@@ -4,14 +4,27 @@
 # Original Author: Angelos http://www.head-fi.org/u/395616/angelosc
 # 2014 April
 #
-import os, sys, subprocess, sqlite3, unicodedata, eyed3
+# rsync -rtv --delete --exclude=_Drag_n_Drop --modify-window=4 ~/Music/iTunes/iTunes\ Music/Music/ /Volumes/X3\ CARD/
+#
+
+IgnoreListPrepend = ['.DS_Store', '._', 'desktop.ini']
+SDPathPrefix = "b:\\"
+import os, sys, subprocess, sqlite3, unicodedata
+try: import eyed3 # Mac
+except:
+	import eyeD3 # Windows
+	SDPathPrefix = "b:"
 
 def SubStringAfterKey(string, key):
 	return string[string.find(key)+len(key):]
 def SubStringBeforeKey(string, key):
 	return string[:string.find(key)]
 def PathTransform(path):
-	return "b:\\"+path.replace("/", "\\")
+	return SDPathPrefix+path.replace("/", "\\")
+def FileIgnore(FileName):
+	for str in IgnoreListPrepend:
+		if FileName[:len(str)] == str: return True
+		else: return False
     
 def M4Ainfo(file):
 	MediaInfo = {'Title':'', 'Artist':'', 'Album':'', 'Genre':''}
@@ -86,7 +99,7 @@ def M3Uinfo(file):
 
 def main():
 	global NullDev, CWD
-	NullDev = open('/dev/null', 'wb')
+	NullDev = open(os.devnull, 'wb')
 	CWD = os.getcwd() + "/"
 	conn = sqlite3.connect(os.path.expanduser("~/Desktop/usrlocal_media.db"))
 	c = conn.cursor()
@@ -117,7 +130,8 @@ def main():
 	print "Scanning for files..."
 	for fileList in os.walk(os.getcwd()):
 		for fileName in fileList[2]:
-			if   fileName.lower()[-4:] == '.mp3' : MP3FileList.append(''.join([fileList[0], '/', fileName]))
+			if	 FileIgnore(fileName)			 : continue
+			elif fileName.lower()[-4:] == '.mp3' : MP3FileList.append(''.join([fileList[0], '/', fileName]))
 			elif fileName.lower()[-4:] == '.m4a' : M4AFileList.append(''.join([fileList[0], '/', fileName]))
 			elif fileName.lower()[-4:] == 'flac' : FLAFileList.append(''.join([fileList[0], '/', fileName]))
 			elif fileName.lower()[-4:] == '.m3u' : M3UFileList.append(''.join([fileList[0], '/', fileName]))
